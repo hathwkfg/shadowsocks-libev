@@ -111,11 +111,11 @@ start_ss_plugin(const char *plugin,
 
     exec = cork_exec_new(plugin);
     cork_exec_add_param(exec, plugin);  // argv[0]
-    extern int fast_open;
-    if (fast_open) cork_exec_add_param(exec, "--fast-open");
+
 #ifdef __ANDROID__
     extern int vpn;
-    if (vpn) cork_exec_add_param(exec, "-V");
+    if (vpn)
+        cork_exec_add_param(exec, "-V");
 #endif
 
     cork_exec_set_env(exec, env);
@@ -166,7 +166,7 @@ start_obfsproxy(const char *plugin,
 {
     char *pch;
     char *opts_dump = NULL;
-    char *buf       = NULL;
+    char *buf = NULL;
     int ret, buf_size = 0;
 
     if (plugin_opts != NULL) {
@@ -270,7 +270,7 @@ start_plugin(const char *plugin,
         if (cwd) {
 #else
         char cwd[PATH_MAX];
-        if (!getcwd(cwd, PATH_MAX)) {
+        if (getcwd(cwd, PATH_MAX) != NULL) {
 #endif
             new_path_len = strlen(current_path) + strlen(cwd) + 2;
             new_path     = ss_malloc(new_path_len);
@@ -332,9 +332,11 @@ stop_plugin()
 {
     if (sub != NULL) {
         cork_subprocess_abort(sub);
+#ifndef __MINGW32__
         if (cork_subprocess_wait(sub) == -1) {
             LOGI("error on terminating the plugin.");
         }
+#endif
         cork_subprocess_free(sub);
     }
 }
